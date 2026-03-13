@@ -84,7 +84,7 @@ http://localhost:3000
 
 ## Environment Variables
 
-Create a `.env` file inside the **backend** folder:
+Create a `.env` file inside the **backend** folder.
 
 ```
 OPENAI_API_KEY=your_openai_api_key
