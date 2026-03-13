@@ -27,22 +27,22 @@ OpenAI API
 
 ## Project Structure
 
-
+```
 alchemind
 │
 ├── backend
-│ └── app
-│ ├── api
-│ ├── services
-│ ├── llm
-│ └── main.py
+│   └── app
+│       ├── api
+│       ├── services
+│       ├── llm
+│       └── main.py
 │
 ├── frontend
-│ └── app
-│ └── page.tsx
+│   └── app
+│       └── page.tsx
 │
 └── README.md
-
+```
 
 ---
 
@@ -50,35 +50,35 @@ alchemind
 
 ### Backend
 
-
+```
 cd backend
 py -m venv .venv
 .venv\Scripts\Activate
 pip install fastapi uvicorn openai python-dotenv
 uvicorn app.main:app --reload
-
+```
 
 Backend runs on:
 
-
+```
 http://127.0.0.1:8000
-
+```
 
 ---
 
 ### Frontend
 
-
+```
 cd frontend
 npm install
 npm run dev
-
+```
 
 Frontend runs on:
 
-
+```
 http://localhost:3000
-
+```
 
 ---
 
@@ -86,9 +86,9 @@ http://localhost:3000
 
 Create a `.env` file inside the **backend** folder:
 
-
+```
 OPENAI_API_KEY=your_openai_api_key
-
+```
 
 ---
 
