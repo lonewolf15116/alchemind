@@ -86,10 +86,10 @@ CORS_ALLOWED_ORIGINS=                   # optional, comma-separated, for preview
 ### Frontend (`frontend/.env.local`)
 
 ```
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
 ```
 
-In production (Vercel), set `NEXT_PUBLIC_API_BASE_URL` to the live Render backend URL.
+In production (Vercel), set `NEXT_PUBLIC_API_URL` to the live Render backend URL (e.g. `https://veridex-backend.onrender.com`). No trailing slash.
 
 ---
 
