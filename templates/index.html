@@ -609,6 +609,42 @@
             border-color: rgba(255, 255, 255, 0.2);
             transform: translateY(-1px);
         }
+
+        /* WebSocket status pill */
+        .ws-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.25rem 0.7rem;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            transition: var(--transition-smooth);
+        }
+        .ws-status .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #6b7280;
+            transition: background 0.3s;
+        }
+        .ws-status.connected { color: #34d399; border-color: rgba(52,211,153,0.3); }
+        .ws-status.connected .dot { background: #34d399; box-shadow: 0 0 6px #34d399; }
+        .ws-status.error { color: #f87171; border-color: rgba(248,113,113,0.3); }
+        .ws-status.error .dot { background: #f87171; }
+
+        /* Blinking cursor while streaming */
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        .typing-cursor {
+            display: inline-block;
+            width: 2px; height: 1em;
+            background: var(--accent-cyan);
+            margin-left: 2px;
+            vertical-align: text-bottom;
+            animation: blink 0.8s step-end infinite;
+        }
     </style>
 </head>
 <body>
@@ -784,18 +820,22 @@
         <!-- CHATBOT TAB -->
         <div id="chatbot" class="tab-content glass-panel">
             <h2>Multi-Turn NLP Conversational Assistant</h2>
-            <p class="description">Chat naturally with the assistant. Our query router automatically determines if you want to classify an abstract, generate titles, or just converse about paper patterns.</p>
+            <p class="description">Live WebSocket chatbot with real-time token streaming. Titles are generated token-by-token as BART thinks — no waiting for the full response.</p>
+            <div id="ws-status-pill" class="ws-status">
+                <span class="dot"></span>
+                <span id="ws-status-text">Connecting…</span>
+            </div>
             <div class="chat-container">
                 <div class="chat-history" id="chat-history">
                     <div class="chat-msg assistant">
                         <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
                         <div class="msg-bubble">
-                            <p>Hello! I am your ArXiv NLP Assistant.</p>
-                            <p>You can chat with me, or paste abstracts to classify and summarize. Try pasting your text with prefixes:</p>
+                            <p>Hello! I am your ArXiv NLP Assistant — now powered by <strong>FastAPI + WebSocket</strong>.</p>
+                            <p>Paste an abstract with one of these prefixes:</p>
                             <ul>
-                                <li><code>classify: &lt;abstract&gt;</code> to predict categories.</li>
-                                <li><code>summarise: &lt;abstract&gt;</code> to generate clean titles.</li>
-                                <li><code>rag: &lt;abstract&gt;</code> to retrieve similar context and generate a RAG-augmented title.</li>
+                                <li><code>classify: &lt;abstract&gt;</code> — predict ArXiv category</li>
+                                <li><code>summarise: &lt;abstract&gt;</code> — <em>stream</em> a generated title token-by-token</li>
+                                <li><code>rag: &lt;abstract&gt;</code> — FAISS retrieval + streamed RAG title</li>
                             </ul>
                         </div>
                     </div>
@@ -808,8 +848,9 @@
                 </div>
                 <div class="demo-prompts">
                     <span class="prompt-chip" onclick="setChatQuery('Help me understand what actions you can take.')">Help Me</span>
-                    <span class="prompt-chip" onclick="setChatQuery('classify: We present a new mathematical model for galaxy clustering...')">Classify Example</span>
-                    <span class="prompt-chip" onclick="setChatQuery('summarise: We introduce a deep neural network called ResNet...')">Summarise Example</span>
+                    <span class="prompt-chip" onclick="setChatQuery('classify: We present a new mathematical model for galaxy clustering using convolutional neural networks...')">Classify</span>
+                    <span class="prompt-chip" onclick="setChatQuery('summarise: We introduce a novel framework for abstractive text summarisation using multi-task reinforcement learning and policy gradient optimization with human feedback.')">Stream Title</span>
+                    <span class="prompt-chip" onclick="setChatQuery('rag: This paper analyzes mathematical foundations of cosmological inflation using classical gauge transformations and density perturbation calculations.')">RAG Stream</span>
                 </div>
             </div>
         </div>
@@ -818,32 +859,26 @@
     <script>
         let myChart = null;
 
-        // Tab switcher
+        // ── Tab switcher ───────────────────────────────────────────────────────
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            // Toggle active btn state
-            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
-            if (targetBtn) targetBtn.classList.add('active');
-            
-            // Toggle tab content
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+            if (btn) btn.classList.add('active');
             document.getElementById(tabId).classList.add('active');
         }
 
-        // Realtime word counts
+        // ── Character counters ─────────────────────────────────────────────────
         function setupTextCounter(areaId, counterId) {
             const area = document.getElementById(areaId);
             const counter = document.getElementById(counterId);
-            area.addEventListener('input', () => {
-                counter.innerText = `${area.value.length} characters`;
-            });
+            area.addEventListener('input', () => { counter.innerText = `${area.value.length} characters`; });
         }
         setupTextCounter('abstract-classify', 'char-count-classify');
         setupTextCounter('abstract-summarise', 'char-count-summarise');
         setupTextCounter('abstract-rag', 'char-count-rag');
 
-        // Sample text payloads
+        // ── Sample abstracts ───────────────────────────────────────────────────
         const sampleAbstracts = {
             classify: "We study convolutional neural network architectures for classification of dense astronomical datasets. By optimizing filter sizes and incorporating residual links, we demonstrate significant improvement in categorizing galaxies. Training is executed using high dimensional visual arrays.",
             summarise: "We introduce a novel framework for abstractive text summarisation using multi-task reinforcement learning. Our model integrates policy gradient optimization with human feedback scores. Empirically, it achieves state-of-the-art results on news corpora and scientific repositories.",
@@ -863,140 +898,100 @@
             }
         }
 
-        // 📊 CLASSIFIER CALLS
+        // ── Classifier ─────────────────────────────────────────────────────────
         async function runClassify() {
             const abstract = document.getElementById('abstract-classify').value;
-            if (!abstract.trim()) {
-                alert('Please enter an abstract.');
-                return;
-            }
+            if (!abstract.trim()) { alert('Please enter an abstract.'); return; }
 
             document.getElementById('loader-classify').classList.add('active');
             document.getElementById('placeholder-classify').style.display = 'none';
             document.getElementById('results-classify').classList.remove('active');
 
             try {
-                const response = await fetch('/api/classify', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                const res = await fetch('/api/classify', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({abstract})
-                });
-                const res = await response.json();
-                
-                if (res.error) throw new Error(res.error);
+                }).then(r => r.json());
+
+                if (res.detail) throw new Error(JSON.stringify(res.detail));
 
                 document.getElementById('res-cls-domain').innerText = res.category_code;
                 document.getElementById('res-cls-conf').innerText = `${res.confidence}%`;
-                
-                // Draw Chart
-                const labels = res.top_5.map(item => `${item.code} (${item.name.slice(0, 18)}...)`);
-                const scores = res.top_5.map(item => item.score);
 
+                const labels = res.top_5.map(i => `${i.code} (${i.name.slice(0, 18)}...)`);
+                const scores = res.top_5.map(i => i.score);
                 if (myChart) myChart.destroy();
-                
-                const ctx = document.getElementById('chart-classify').getContext('2d');
-                myChart = new Chart(ctx, {
+                myChart = new Chart(document.getElementById('chart-classify').getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Probability (%)',
-                            data: scores,
-                            backgroundColor: 'rgba(6, 182, 212, 0.65)',
-                            borderColor: 'rgba(6, 182, 212, 1)',
-                            borderWidth: 1.5,
-                            borderRadius: 6,
-                            barThickness: 18
-                        }]
+                        labels,
+                        datasets: [{ label: 'Probability (%)', data: scores, backgroundColor: 'rgba(6,182,212,0.65)', borderColor: 'rgba(6,182,212,1)', borderWidth: 1.5, borderRadius: 6, barThickness: 18 }]
                     },
                     options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
+                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
                         scales: {
-                            x: {
-                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                                ticks: { color: '#9ca3af' },
-                                max: 100
-                            },
-                            y: {
-                                grid: { display: false },
-                                ticks: { color: '#f3f4f6', font: { size: 10, weight: 600 } }
-                            }
+                            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' }, max: 100 },
+                            y: { grid: { display: false }, ticks: { color: '#f3f4f6', font: { size: 10, weight: 600 } } }
                         }
                     }
                 });
-
                 document.getElementById('results-classify').classList.add('active');
             } catch (err) {
-                alert(err.message || 'Error processing classification request');
+                alert(err.message || 'Classification error');
             } finally {
                 document.getElementById('loader-classify').classList.remove('active');
             }
         }
 
-        // ✍️ SUMMARISER CALLS
+        // ── Summariser ─────────────────────────────────────────────────────────
         async function runSummarise() {
             const abstract = document.getElementById('abstract-summarise').value;
-            if (!abstract.trim()) {
-                alert('Please enter an abstract.');
-                return;
-            }
+            if (!abstract.trim()) { alert('Please enter an abstract.'); return; }
 
             document.getElementById('loader-summarise').classList.add('active');
             document.getElementById('placeholder-summarise').style.display = 'none';
             document.getElementById('results-summarise').classList.remove('active');
 
             try {
-                const response = await fetch('/api/summarize', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                const res = await fetch('/api/summarize', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({abstract})
-                });
-                const res = await response.json();
-                
-                if (res.error) throw new Error(res.error);
+                }).then(r => r.json());
+
+                if (res.detail) throw new Error(JSON.stringify(res.detail));
 
                 document.getElementById('res-sum-text').innerHTML = `<code>"${res.title}"</code>`;
                 document.getElementById('res-sum-time').innerText = `${res.time_taken}s`;
                 document.getElementById('results-summarise').classList.add('active');
             } catch (err) {
-                alert(err.message || 'Error processing summarisation request');
+                alert(err.message || 'Summarisation error');
             } finally {
                 document.getElementById('loader-summarise').classList.remove('active');
             }
         }
 
-        // 📚 RAG CALLS
+        // ── RAG ────────────────────────────────────────────────────────────────
         async function runRAG() {
             const abstract = document.getElementById('abstract-rag').value;
             const k = document.getElementById('rag-k').value;
-            if (!abstract.trim()) {
-                alert('Please enter an abstract.');
-                return;
-            }
+            if (!abstract.trim()) { alert('Please enter an abstract.'); return; }
 
             document.getElementById('loader-rag').classList.add('active');
             document.getElementById('placeholder-rag').style.display = 'none';
             document.getElementById('results-rag').classList.remove('active');
 
             try {
-                const response = await fetch('/api/rag', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                const res = await fetch('/api/rag', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({abstract, k})
-                });
-                const res = await response.json();
-                
-                if (res.error) throw new Error(res.error);
+                }).then(r => r.json());
+
+                if (res.detail) throw new Error(JSON.stringify(res.detail));
 
                 document.getElementById('res-rag-title').innerHTML = `<code>"${res.title}"</code>`;
                 document.getElementById('res-rag-time').innerText = `${res.time_taken}s`;
 
-                // Render neighbors list
                 const list = document.getElementById('res-rag-list');
                 list.innerHTML = '';
                 res.retrieved_papers.forEach((paper, idx) => {
@@ -1010,21 +1005,138 @@
                         </div>
                         <div class="score-bar">
                             <div class="score-fill" style="width: ${Math.max(10, pct)}%"></div>
-                        </div>
-                    `;
+                        </div>`;
                     list.appendChild(card);
                 });
-
                 document.getElementById('results-rag').classList.add('active');
             } catch (err) {
-                alert(err.message || 'Error processing RAG request');
+                alert(err.message || 'RAG error');
             } finally {
                 document.getElementById('loader-rag').classList.remove('active');
             }
         }
 
-        // 💬 CHAT SYSTEM
+        // ── WebSocket Chat (FastAPI /ws/chat) ──────────────────────────────────
         let chatHistory = [];
+        let chatSocket = null;
+        let socketReady = false;
+        let currentStreamBubble = null;  // the <div class="msg-bubble"> being streamed into
+        let currentStreamText = '';      // accumulated token text
+        let currentStreamPrefix = '';    // static prefix shown before streamed tokens
+
+        function setWsStatus(state, label) {
+            const pill = document.getElementById('ws-status-pill');
+            const text = document.getElementById('ws-status-text');
+            pill.className = 'ws-status ' + state;
+            text.textContent = label;
+        }
+
+        function initChatSocket() {
+            const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const url = `${proto}//${window.location.host}/ws/chat`;
+            setWsStatus('', 'Connecting…');
+            chatSocket = new WebSocket(url);
+
+            chatSocket.onopen = () => {
+                socketReady = true;
+                setWsStatus('connected', 'WebSocket connected');
+            };
+
+            chatSocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'start') {
+                    // Remove loading indicator, create streaming bubble
+                    document.getElementById('chat-loading-dummy')?.remove();
+                    currentStreamText = '';
+                    currentStreamPrefix = data.prefix || '';
+                    currentStreamBubble = createStreamBubble(currentStreamPrefix);
+
+                } else if (data.type === 'token') {
+                    // Append token and re-render
+                    currentStreamText += data.text;
+                    if (currentStreamBubble) {
+                        currentStreamBubble.innerHTML =
+                            formatChatText(currentStreamPrefix + '`' + currentStreamText + '`') +
+                            '<span class="typing-cursor"></span>';
+                        scrollChatToBottom();
+                    }
+
+                } else if (data.type === 'done') {
+                    // Finalise — wrap in quotes, append any extra context
+                    if (currentStreamBubble) {
+                        const finalText =
+                            currentStreamPrefix +
+                            '`"' + currentStreamText.trim() + '"`' +
+                            (data.extra || '');
+                        currentStreamBubble.innerHTML = formatChatText(finalText);
+                        currentStreamBubble = null;
+                        currentStreamText = '';
+                        scrollChatToBottom();
+                    }
+                    chatHistory.push(['(streaming)', currentStreamText]);
+
+                } else if (data.type === 'response') {
+                    // Non-streamed full response (classification, greetings, etc.)
+                    document.getElementById('chat-loading-dummy')?.remove();
+                    appendChatBubble(data.text, 'assistant');
+                    chatHistory.push(['(message)', data.text]);
+
+                } else if (data.type === 'error') {
+                    document.getElementById('chat-loading-dummy')?.remove();
+                    appendChatBubble('⚠️ Server error: ' + (data.text || 'unknown'), 'assistant');
+                }
+            };
+
+            chatSocket.onclose = () => {
+                socketReady = false;
+                setWsStatus('error', 'Disconnected — retrying…');
+                setTimeout(initChatSocket, 2500);
+            };
+
+            chatSocket.onerror = () => {
+                socketReady = false;
+                setWsStatus('error', 'Connection error');
+            };
+        }
+
+        function createStreamBubble(prefix) {
+            const container = document.getElementById('chat-history');
+            const wrap = document.createElement('div');
+            wrap.className = 'chat-msg assistant';
+            wrap.innerHTML = `
+                <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+                <div class="msg-bubble">${formatChatText(prefix)}<span class="typing-cursor"></span></div>`;
+            container.appendChild(wrap);
+            scrollChatToBottom();
+            return wrap.querySelector('.msg-bubble');
+        }
+
+        function scrollChatToBottom() {
+            const c = document.getElementById('chat-history');
+            c.scrollTop = c.scrollHeight;
+        }
+
+        function formatChatText(text) {
+            return text
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code>$1</code>');
+        }
+
+        function appendChatBubble(text, sender) {
+            const container = document.getElementById('chat-history');
+            const wrap = document.createElement('div');
+            wrap.className = `chat-msg ${sender}`;
+            const avatar = sender === 'user'
+                ? '<div class="msg-avatar"><i class="fa-solid fa-user"></i></div>'
+                : '<div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>';
+            wrap.innerHTML = `${avatar}<div class="msg-bubble">${formatChatText(text)}</div>`;
+            container.appendChild(wrap);
+            scrollChatToBottom();
+        }
 
         function setChatQuery(query) {
             document.getElementById('chat-input').value = query;
@@ -1035,68 +1147,49 @@
             if (e.key === 'Enter') sendChatMessage();
         }
 
-        async function sendChatMessage() {
+        function sendChatMessage() {
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
             if (!message) return;
 
-            // Render user bubble
             appendChatBubble(message, 'user');
             input.value = '';
 
-            // ROUGE styling / loader dummy response
-            const historyContainer = document.getElementById('chat-history');
-            const loadingBubble = document.createElement('div');
-            loadingBubble.className = 'chat-msg assistant';
-            loadingBubble.id = 'chat-loading-dummy';
-            loadingBubble.innerHTML = `
+            // Show loading indicator
+            const container = document.getElementById('chat-history');
+            const loading = document.createElement('div');
+            loading.className = 'chat-msg assistant';
+            loading.id = 'chat-loading-dummy';
+            loading.innerHTML = `
                 <div class="msg-avatar"><i class="fa-solid fa-spinner fa-spin"></i></div>
-                <div class="msg-bubble" style="opacity: 0.7;">Formulating cognitive response...</div>
-            `;
-            historyContainer.appendChild(loadingBubble);
-            historyContainer.scrollTop = historyContainer.scrollHeight;
+                <div class="msg-bubble" style="opacity:0.7;">Thinking…</div>`;
+            container.appendChild(loading);
+            scrollChatToBottom();
 
-            try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({message, history: chatHistory})
+            if (socketReady && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                // ── WebSocket path (streaming) ────────────────────────────
+                chatSocket.send(JSON.stringify({ message, history: chatHistory }));
+            } else {
+                // ── HTTP fallback ─────────────────────────────────────────
+                fetch('/api/chat', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, history: chatHistory })
+                })
+                .then(r => r.json())
+                .then(res => {
+                    document.getElementById('chat-loading-dummy')?.remove();
+                    appendChatBubble(res.response, 'assistant');
+                    chatHistory.push([message, res.response]);
+                })
+                .catch(() => {
+                    document.getElementById('chat-loading-dummy')?.remove();
+                    appendChatBubble('⚠️ Could not reach the server.', 'assistant');
                 });
-                const res = await response.json();
-                
-                loadingBubble.remove();
-                
-                appendChatBubble(res.response, 'assistant');
-                
-                // Track history
-                chatHistory.push([message, res.response]);
-            } catch (err) {
-                loadingBubble.remove();
-                appendChatBubble('⚠️ Error connecting to routing assistant.', 'assistant');
             }
         }
 
-        function appendChatBubble(text, sender) {
-            const historyContainer = document.getElementById('chat-history');
-            const bubble = document.createElement('div');
-            bubble.className = `chat-msg ${sender}`;
-            
-            const avatarHtml = sender === 'user' 
-                ? '<div class="msg-avatar"><i class="fa-solid fa-user"></i></div>'
-                : '<div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>';
-            
-            // Format text spacing and code blocks slightly
-            let formattedText = text
-                .replace(/\n/g, '<br>')
-                .replace(/`(.*?)`/g, '<code>$1</code>');
-                
-            bubble.innerHTML = `
-                ${avatarHtml}
-                <div class="msg-bubble">${formattedText}</div>
-            `;
-            historyContainer.appendChild(bubble);
-            historyContainer.scrollTop = historyContainer.scrollHeight;
-        }
+        // Boot the WebSocket on page load
+        initChatSocket();
     </script>
 </body>
 </html>
