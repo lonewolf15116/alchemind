@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArXiv NLP Intelligence Suite</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --surface-color: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-cyan: #06b6d4;
+            --accent-violet: #8b5cf6;
+            --accent-gradient: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+            --shadow-glow: 0 8px 32px 0 rgba(6, 182, 212, 0.15);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(11, 15, 25, 0.8);
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            letter-spacing: -0.5px;
+        }
+
+        .logo i {
+            -webkit-text-fill-color: var(--accent-cyan);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.35rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--text-primary);
+            background: var(--accent-gradient);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+        }
+
+        main {
+            flex: 1;
+            max-width: 1400px;
+            width: 100%;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .glass-panel {
+            background: var(--surface-color);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-glow);
+            transition: var(--transition-smooth);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.5px;
+        }
+
+        .description {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 2.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.25rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: none;
+            transition: var(--transition-smooth);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.15);
+        }
+
+        .textarea-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .action-bar {
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .btn {
+            background: var(--accent-gradient);
+            border: none;
+            color: var(--text-primary);
+            padding: 0.9rem 1.8rem;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 4px 16px rgba(6, 182, 212, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.35);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            box-shadow: none;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .output-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            min-height: 300px;
+            transition: var(--transition-smooth);
+        }
+
+        .output-placeholder {
+            text-align: center;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .output-placeholder i {
+            font-size: 3rem;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            opacity: 0.6;
+        }
+
+        .result-view {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .result-view.active {
+            display: block;
+        }
+
+        /* Loading Spinner */
+        .loader-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(11, 15, 25, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .loader-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(6, 182, 212, 0.1);
+            border-top: 4px solid var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader-text {
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            color: var(--accent-cyan);
+        }
+
+        /* Results styling */
+        .metric-row {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-badge {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            flex-grow: 1;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-val {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+        }
+
+        .text-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        /* RAG cards */
+        .retrieved-list {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .retrieved-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 1.25rem;
+            border-radius: 12px;
+            transition: var(--transition-smooth);
+        }
+
+        .retrieved-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(4px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .card-score {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        .score-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: var(--accent-gradient);
+            border-radius: 2px;
+        }
+
+        /* Chat styling */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .chat-msg {
+            display: flex;
+            gap: 1rem;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .chat-msg.assistant {
+            align-self: flex-start;
+        }
+
+        .msg-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-msg.user .msg-avatar {
+            background: var(--accent-violet);
+            color: var(--text-primary);
+        }
+
+        .chat-msg.assistant .msg-avatar {
+            background: var(--accent-cyan);
+            color: var(--text-primary);
+        }
+
+        .msg-bubble {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            padding: 1rem 1.25rem;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .chat-msg.user .msg-bubble {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.25);
+            border-top-right-radius: 4px;
+        }
+
+        .chat-msg.assistant .msg-bubble {
+            background: rgba(6, 182, 212, 0.08);
+            border-color: rgba(6, 182, 212, 0.18);
+            border-top-left-radius: 4px;
+        }
+
+        .chat-msg p {
+            margin-bottom: 0.5rem;
+        }
+
+        .chat-msg p:last-child {
+            margin-bottom: 0;
+        }
+
+        .chat-msg ul {
+            padding-left: 1.25rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .chat-msg li {
+            margin-bottom: 0.25rem;
+        }
+
+        .chat-msg code {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 0.1rem 0.3rem;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .chat-input-bar {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: var(--transition-smooth);
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.15);
+        }
+
+        /* Demo prompts card */
+        .demo-prompts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .prompt-chip {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .prompt-chip:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <i class="fa-solid fa-atom"></i>
+                <span>ArXiv NLP Intelligence Suite</span>
+            </div>
+            <nav class="nav-tabs">
+                <button class="tab-btn active" onclick="switchTab('classifier')">
+                    <i class="fa-solid fa-chart-simple"></i> Classifier
+                </button>
+                <button class="tab-btn" onclick="switchTab('summariser')">
+                    <i class="fa-solid fa-feather"></i> Summariser
+                </button>
+                <button class="tab-btn" onclick="switchTab('rag')">
+                    <i class="fa-solid fa-layer-group"></i> RAG Augmentor
+                </button>
+                <button class="tab-btn" onclick="switchTab('chatbot')">
+                    <i class="fa-solid fa-comments"></i> Chatbot
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- CLASSIFIER TAB -->
+        <div id="classifier" class="tab-content active glass-panel">
+            <h2>ArXiv Paper Classifier</h2>
+            <p class="description">Paste a scientific paper abstract. The underlying BART zero-shot Natural Language Inference model will predict its primary categories with exact probabilities.</p>
+            <div class="grid-layout">
+                <div class="input-panel">
+                    <div class="input-group">
+                        <label for="abstract-classify">Paper Abstract</label>
+                        <textarea id="abstract-classify" placeholder="Enter paper abstract here..."></textarea>
+                    </div>
+                    <div class="textarea-footer">
+                        <span id="char-count-classify">0 characters</span>
+                        <span class="prompt-chip" onclick="loadSampleText('classify')">Load Sample Abstract</span>
+                    </div>
+                    <div class="action-bar">
+                        <button class="btn" onclick="runClassify()">
+                            <i class="fa-solid fa-brain"></i> Analyze & Classify
+                        </button>
+                    </div>
+                </div>
+                <div class="output-card" id="output-classify-card">
+                    <div class="loader-overlay" id="loader-classify">
+                        <div class="spinner"></div>
+                        <div class="loader-text">Executing zero-shot NLI models...</div>
+                    </div>
+                    <div class="output-placeholder" id="placeholder-classify">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Click 'Analyze & Classify' to render probability distributions.</span>
+                    </div>
+                    <div class="result-view" id="results-classify">
+                        <div class="metric-row">
+                            <div class="metric-badge">
+                                <span class="metric-label">Predicted Domain</span>
+                                <span class="metric-val" id="res-cls-domain">CS</span>
+                            </div>
+                            <div class="metric-badge">
+                                <span class="metric-label">Confidence Score</span>
+                                <span class="metric-val" id="res-cls-conf">0.0%</span>
+                            </div>
+                        </div>
+                        <div style="position: relative; height: 260px; width: 100%;">
+                            <canvas id="chart-classify"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUMMARISER TAB -->
+        <div id="summariser" class="tab-content glass-panel">
+            <h2>Abstractive Summariser (Title Generator)</h2>
+            <p class="description">Generate highly-relevant academic titles from long paper abstracts. We leverage a Large Language Model (BART-CNN) fine-tuned for dense summaries.</p>
+            <div class="grid-layout">
+                <div class="input-panel">
+                    <div class="input-group">
+                        <label for="abstract-summarise">Paper Abstract</label>
+                        <textarea id="abstract-summarise" placeholder="Enter paper abstract here..."></textarea>
+                    </div>
+                    <div class="textarea-footer">
+                        <span id="char-count-summarise">0 characters</span>
+                        <span class="prompt-chip" onclick="loadSampleText('summarise')">Load Sample Abstract</span>
+                    </div>
+                    <div class="action-bar">
+                        <button class="btn" onclick="runSummarise()">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Title
+                        </button>
+                    </div>
+                </div>
+                <div class="output-card" id="output-summarise-card">
+                    <div class="loader-overlay" id="loader-summarise">
+                        <div class="spinner"></div>
+                        <div class="loader-text">Generating summaries...</div>
+                    </div>
+                    <div class="output-placeholder" id="placeholder-summarise">
+                        <i class="fa-solid fa-file-signature"></i>
+                        <span>Generated summaries and title overlays will render here.</span>
+                    </div>
+                    <div class="result-view" id="results-summarise">
+                        <div class="metric-row">
+                            <div class="metric-badge">
+                                <span class="metric-label">Execution Time</span>
+                                <span class="metric-val" id="res-sum-time">0.0s</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Generated Academic Title</label>
+                            <div class="text-box" id="res-sum-text">No summary generated.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RAG TAB -->
+        <div id="rag" class="tab-content glass-panel">
+            <h2>Retrieval-Augmented Title Generator</h2>
+            <p class="description">Contextualise your paper titles. We perform a real-time FAISS vector space search across 5,000 papers, find the top k similar papers, and prepend them to the LLM generation prompt.</p>
+            <div class="grid-layout">
+                <div class="input-panel">
+                    <div class="input-group">
+                        <label for="abstract-rag">Paper Abstract</label>
+                        <textarea id="abstract-rag" placeholder="Enter paper abstract here..."></textarea>
+                    </div>
+                    <div class="textarea-footer">
+                        <span id="char-count-rag">0 characters</span>
+                        <span class="prompt-chip" onclick="loadSampleText('rag')">Load Sample Abstract</span>
+                    </div>
+                    <div class="action-bar" style="margin-top: 1rem; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <label style="margin: 0;">Retrieved papers (k):</label>
+                            <input type="number" id="rag-k" value="3" min="1" max="5" style="width: 60px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.3rem 0.5rem; color: #fff; text-align: center; font-weight: 600;">
+                        </div>
+                        <button class="btn" onclick="runRAG()">
+                            <i class="fa-solid fa-server"></i> Generate with RAG Context
+                        </button>
+                    </div>
+                </div>
+                <div class="output-card" id="output-rag-card">
+                    <div class="loader-overlay" id="loader-rag">
+                        <div class="spinner"></div>
+                        <div class="loader-text">Retrieving matching embeddings and running RAG...</div>
+                    </div>
+                    <div class="output-placeholder" id="placeholder-rag">
+                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                        <span>FAISS search logs and RAG-augmented generation overlays will render here.</span>
+                    </div>
+                    <div class="result-view" id="results-rag" style="max-height: 480px; overflow-y: auto; padding-right: 0.5rem;">
+                        <div class="metric-row" style="margin-bottom: 1rem;">
+                            <div class="metric-badge" style="padding: 0.5rem 1rem;">
+                                <span class="metric-label">RAG Processing Time</span>
+                                <span class="metric-val" id="res-rag-time" style="font-size: 1.1rem;">0.0s</span>
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 1.25rem;">
+                            <label>RAG-Augmented Generated Title</label>
+                            <div class="text-box" id="res-rag-title" style="font-weight: 600; border-left: 3px solid var(--accent-cyan);">No title.</div>
+                        </div>
+                        <label>FAISS Nearest Neighbors Context (Top K)</label>
+                        <div class="retrieved-list" id="res-rag-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHATBOT TAB -->
+        <div id="chatbot" class="tab-content glass-panel">
+            <h2>Multi-Turn NLP Conversational Assistant</h2>
+            <p class="description">Chat naturally with the assistant. Our query router automatically determines if you want to classify an abstract, generate titles, or just converse about paper patterns.</p>
+            <div class="chat-container">
+                <div class="chat-history" id="chat-history">
+                    <div class="chat-msg assistant">
+                        <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+                        <div class="msg-bubble">
+                            <p>Hello! I am your ArXiv NLP Assistant.</p>
+                            <p>You can chat with me, or paste abstracts to classify and summarize. Try pasting your text with prefixes:</p>
+                            <ul>
+                                <li><code>classify: &lt;abstract&gt;</code> to predict categories.</li>
+                                <li><code>summarise: &lt;abstract&gt;</code> to generate clean titles.</li>
+                                <li><code>rag: &lt;abstract&gt;</code> to retrieve similar context and generate a RAG-augmented title.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-bar">
+                    <input type="text" class="chat-input" id="chat-input" placeholder="Type a message or paste a command..." onkeydown="handleChatKey(event)">
+                    <button class="btn" onclick="sendChatMessage()">
+                        <i class="fa-solid fa-paper-plane"></i> Send
+                    </button>
+                </div>
+                <div class="demo-prompts">
+                    <span class="prompt-chip" onclick="setChatQuery('Help me understand what actions you can take.')">Help Me</span>
+                    <span class="prompt-chip" onclick="setChatQuery('classify: We present a new mathematical model for galaxy clustering...')">Classify Example</span>
+                    <span class="prompt-chip" onclick="setChatQuery('summarise: We introduce a deep neural network called ResNet...')">Summarise Example</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let myChart = null;
+
+        // Tab switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Toggle active btn state
+            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
+            if (targetBtn) targetBtn.classList.add('active');
+            
+            // Toggle tab content
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Realtime word counts
+        function setupTextCounter(areaId, counterId) {
+            const area = document.getElementById(areaId);
+            const counter = document.getElementById(counterId);
+            area.addEventListener('input', () => {
+                counter.innerText = `${area.value.length} characters`;
+            });
+        }
+        setupTextCounter('abstract-classify', 'char-count-classify');
+        setupTextCounter('abstract-summarise', 'char-count-summarise');
+        setupTextCounter('abstract-rag', 'char-count-rag');
+
+        // Sample text payloads
+        const sampleAbstracts = {
+            classify: "We study convolutional neural network architectures for classification of dense astronomical datasets. By optimizing filter sizes and incorporating residual links, we demonstrate significant improvement in categorizing galaxies. Training is executed using high dimensional visual arrays.",
+            summarise: "We introduce a novel framework for abstractive text summarisation using multi-task reinforcement learning. Our model integrates policy gradient optimization with human feedback scores. Empirically, it achieves state-of-the-art results on news corpora and scientific repositories.",
+            rag: "This paper analyzes the mathematical foundations of cosmological inflation using classical gauge transformations. We demonstrate that density perturbation calculations are robust in non-abelian configurations, leading to exact cosmological bounds."
+        };
+
+        function loadSampleText(mode) {
+            if (mode === 'classify') {
+                document.getElementById('abstract-classify').value = sampleAbstracts.classify;
+                document.getElementById('char-count-classify').innerText = `${sampleAbstracts.classify.length} characters`;
+            } else if (mode === 'summarise') {
+                document.getElementById('abstract-summarise').value = sampleAbstracts.summarise;
+                document.getElementById('char-count-summarise').innerText = `${sampleAbstracts.summarise.length} characters`;
+            } else if (mode === 'rag') {
+                document.getElementById('abstract-rag').value = sampleAbstracts.rag;
+                document.getElementById('char-count-rag').innerText = `${sampleAbstracts.rag.length} characters`;
+            }
+        }
+
+        // 📊 CLASSIFIER CALLS
+        async function runClassify() {
+            const abstract = document.getElementById('abstract-classify').value;
+            if (!abstract.trim()) {
+                alert('Please enter an abstract.');
+                return;
+            }
+
+            document.getElementById('loader-classify').classList.add('active');
+            document.getElementById('placeholder-classify').style.display = 'none';
+            document.getElementById('results-classify').classList.remove('active');
+
+            try {
+                const response = await fetch('/api/classify', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({abstract})
+                });
+                const res = await response.json();
+                
+                if (res.error) throw new Error(res.error);
+
+                document.getElementById('res-cls-domain').innerText = res.category_code;
+                document.getElementById('res-cls-conf').innerText = `${res.confidence}%`;
+                
+                // Draw Chart
+                const labels = res.top_5.map(item => `${item.code} (${item.name.slice(0, 18)}...)`);
+                const scores = res.top_5.map(item => item.score);
+
+                if (myChart) myChart.destroy();
+                
+                const ctx = document.getElementById('chart-classify').getContext('2d');
+                myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Probability (%)',
+                            data: scores,
+                            backgroundColor: 'rgba(6, 182, 212, 0.65)',
+                            borderColor: 'rgba(6, 182, 212, 1)',
+                            borderWidth: 1.5,
+                            borderRadius: 6,
+                            barThickness: 18
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#9ca3af' },
+                                max: 100
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { color: '#f3f4f6', font: { size: 10, weight: 600 } }
+                            }
+                        }
+                    }
+                });
+
+                document.getElementById('results-classify').classList.add('active');
+            } catch (err) {
+                alert(err.message || 'Error processing classification request');
+            } finally {
+                document.getElementById('loader-classify').classList.remove('active');
+            }
+        }
+
+        // ✍️ SUMMARISER CALLS
+        async function runSummarise() {
+            const abstract = document.getElementById('abstract-summarise').value;
+            if (!abstract.trim()) {
+                alert('Please enter an abstract.');
+                return;
+            }
+
+            document.getElementById('loader-summarise').classList.add('active');
+            document.getElementById('placeholder-summarise').style.display = 'none';
+            document.getElementById('results-summarise').classList.remove('active');
+
+            try {
+                const response = await fetch('/api/summarize', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({abstract})
+                });
+                const res = await response.json();
+                
+                if (res.error) throw new Error(res.error);
+
+                document.getElementById('res-sum-text').innerHTML = `<code>"${res.title}"</code>`;
+                document.getElementById('res-sum-time').innerText = `${res.time_taken}s`;
+                document.getElementById('results-summarise').classList.add('active');
+            } catch (err) {
+                alert(err.message || 'Error processing summarisation request');
+            } finally {
+                document.getElementById('loader-summarise').classList.remove('active');
+            }
+        }
+
+        // 📚 RAG CALLS
+        async function runRAG() {
+            const abstract = document.getElementById('abstract-rag').value;
+            const k = document.getElementById('rag-k').value;
+            if (!abstract.trim()) {
+                alert('Please enter an abstract.');
+                return;
+            }
+
+            document.getElementById('loader-rag').classList.add('active');
+            document.getElementById('placeholder-rag').style.display = 'none';
+            document.getElementById('results-rag').classList.remove('active');
+
+            try {
+                const response = await fetch('/api/rag', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({abstract, k})
+                });
+                const res = await response.json();
+                
+                if (res.error) throw new Error(res.error);
+
+                document.getElementById('res-rag-title').innerHTML = `<code>"${res.title}"</code>`;
+                document.getElementById('res-rag-time').innerText = `${res.time_taken}s`;
+
+                // Render neighbors list
+                const list = document.getElementById('res-rag-list');
+                list.innerHTML = '';
+                res.retrieved_papers.forEach((paper, idx) => {
+                    const pct = Math.round(paper.score * 100);
+                    const card = document.createElement('div');
+                    card.className = 'retrieved-card';
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <span class="card-title">${idx + 1}. ${paper.title}</span>
+                            <span class="card-score">Cosine: ${paper.score.toFixed(4)}</span>
+                        </div>
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: ${Math.max(10, pct)}%"></div>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+
+                document.getElementById('results-rag').classList.add('active');
+            } catch (err) {
+                alert(err.message || 'Error processing RAG request');
+            } finally {
+                document.getElementById('loader-rag').classList.remove('active');
+            }
+        }
+
+        // 💬 CHAT SYSTEM
+        let chatHistory = [];
+
+        function setChatQuery(query) {
+            document.getElementById('chat-input').value = query;
+            document.getElementById('chat-input').focus();
+        }
+
+        function handleChatKey(e) {
+            if (e.key === 'Enter') sendChatMessage();
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Render user bubble
+            appendChatBubble(message, 'user');
+            input.value = '';
+
+            // ROUGE styling / loader dummy response
+            const historyContainer = document.getElementById('chat-history');
+            const loadingBubble = document.createElement('div');
+            loadingBubble.className = 'chat-msg assistant';
+            loadingBubble.id = 'chat-loading-dummy';
+            loadingBubble.innerHTML = `
+                <div class="msg-avatar"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                <div class="msg-bubble" style="opacity: 0.7;">Formulating cognitive response...</div>
+            `;
+            historyContainer.appendChild(loadingBubble);
+            historyContainer.scrollTop = historyContainer.scrollHeight;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message, history: chatHistory})
+                });
+                const res = await response.json();
+                
+                loadingBubble.remove();
+                
+                appendChatBubble(res.response, 'assistant');
+                
+                // Track history
+                chatHistory.push([message, res.response]);
+            } catch (err) {
+                loadingBubble.remove();
+                appendChatBubble('⚠️ Error connecting to routing assistant.', 'assistant');
+            }
+        }
+
+        function appendChatBubble(text, sender) {
+            const historyContainer = document.getElementById('chat-history');
+            const bubble = document.createElement('div');
+            bubble.className = `chat-msg ${sender}`;
+            
+            const avatarHtml = sender === 'user' 
+                ? '<div class="msg-avatar"><i class="fa-solid fa-user"></i></div>'
+                : '<div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>';
+            
+            // Format text spacing and code blocks slightly
+            let formattedText = text
+                .replace(/\n/g, '<br>')
+                .replace(/`(.*?)`/g, '<code>$1</code>');
+                
+            bubble.innerHTML = `
+                ${avatarHtml}
+                <div class="msg-bubble">${formattedText}</div>
+            `;
+            historyContainer.appendChild(bubble);
+            historyContainer.scrollTop = historyContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>

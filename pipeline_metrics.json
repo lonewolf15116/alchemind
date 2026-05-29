@@ -1,0 +1,36 @@
+{
+    "classical_ml": {
+        "Logistic Regression": {
+            "Accuracy": 0.850225,
+            "Macro F1": 0.7526346186286919,
+            "Time (s)": 91.5
+        },
+        "Na\u00efve Bayes": {
+            "Accuracy": 0.815625,
+            "Macro F1": 0.7070565079334277,
+            "Time (s)": 0.2
+        },
+        "LinearSVC": {
+            "Accuracy": 0.8486,
+            "Macro F1": 0.748207839942225,
+            "Time (s)": 48.3
+        }
+    },
+    "zero_shot": {
+        "Accuracy": 0.35,
+        "Macro F1": 0.16287878787878787,
+        "Time (s)": 98.3
+    },
+    "summarisation": {
+        "rouge1": 0.18341048467721893,
+        "rouge2": 0.06806598806598807,
+        "rougeL": 0.16246183646589324,
+        "Time (s)": 28.9
+    },
+    "rag": {
+        "rouge1": 0.20547735542173803,
+        "rouge2": 0.08103052861117377,
+        "rougeL": 0.17425049922269056,
+        "Time (s)": 25.8
+    }
+}

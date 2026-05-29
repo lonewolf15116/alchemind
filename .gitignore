@@ -12,3 +12,16 @@ out/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Large dataset files — too big for GitHub
+arxiv-metadata-oai-snapshot.json
+arxiv_processed.csv
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# IDE files
+.idea/
+
+# Helper injection scripts (not part of coursework)
+inject_remaining.py
